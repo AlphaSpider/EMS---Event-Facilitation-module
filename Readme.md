@@ -1,96 +1,96 @@
-## 1. Data Model & Database Architecture
+# 1. Data Model & Database Architecture
 <p>
 The data module is designed for PostgreSQL, utilizing a normalized relational schema to ensure data integrity and efficient querying. The architecture separates "Operational Data" (live event management) from "Analytical Data" (reporting), ensuring high performance even as the data grows.
 </p>
 
-### Implementation Files
+## Implementation Files
 
 
-* Python Logic (Django ORM): [events/models.py](https://github.com/AlphaSpider/EMS---Event-Facilitation-module/blob/fe9d0d3c1610884983a729255a3160c18263428a/events/models.py) - Defines the application-level data structures.
+* **Python Logic (Django ORM):** [events/models.py](events/models.py) - Defines the application-level data structures.
 
 
-* Database Schema (SQL): [events/SQLdb_design.sql](https://github.com/AlphaSpider/EMS---Event-Facilitation-module/blob/fe9d0d3c1610884983a729255a3160c18263428a/events/SQLdb_design.sql) - Contains DDL and raw queries.
+* Database Schema (SQL): [events/SQLdb_design.sql](events/SQLdb_design.sql) - Contains DDL and raw queries.
 
-#### Entity Relationship Diagram (ERD)
+### Entity Relationship Diagram (ERD)
 
 The following diagram illustrates the relationships between Users, Events, Venues, and the Feedback system.
 
 ![ERD_img](https://github.com/AlphaSpider/EMS---Event-Facilitation-module/blob/6a19fa6a814efd7d7cf59bcbcfde6fba61e842fb/docs/Datamodel_diagram.png)
 
-### Major Design Decisions
+## Major Design Decisions
 
-1. RBAC Integration: The User model includes a specific role field (Admin, Teacher, Student) to enforce the detailed permissions matrix required by the system.
+1. **RBAC Integration:** The User model includes a specific role field (Admin, Teacher, Student) to enforce the detailed permissions matrix required by the system.
 
-2. Resource Allocation (Many-to-Many): Instead of a simple link between Events and Resources, I implemented a Through Model (EventResourceRequest). This allows tracking the quantity of items needed (e.g., "Event A needs 2 Projectors," not just "Event A needs Projectors").
+2. **Resource Allocation (Many-to-Many):** Instead of a simple link between Events and Resources, I implemented a Through Model (EventResourceRequest). This allows tracking the quantity of items needed (e.g., "Event A needs 2 Projectors," not just "Event A needs Projectors").
 
-3. Venue Conflict Prevention: The Venue table is decoupled from Event to allow for "Time-Overlap" validation queries (see SQL file).
+3. **Venue Conflict Prevention:** The Venue table is decoupled from Event to allow for "Time-Overlap" validation queries (see SQL file).
 
-4. Dedicated Analytics Table: The EventSuccessReport table has a One-to-One relationship with Event. This separates heavy aggregation logic (calculating average ratings/attendance) from the live transactional database, optimizing dashboard performance.
+4. **Dedicated Analytics Table:** The EventSuccessReport table has a One-to-One relationship with Event. This separates heavy aggregation logic (calculating average ratings/attendance) from the live transactional database, optimizing dashboard performance.
 
 
-## 2. System Workflows
+# 2. System Workflows
 
 The Event Facilitation Module operates on four primary logic flows to ensure seamless coordination between Admins, Teachers, and Students.
 
-#### A. Event Creation & Approval Workflow
+### A. Event Creation & Approval Workflow
 
 This workflow ensures that all events are vetted by the administration before resources are committed.
 
-1. Proposal: A Teacher logs in and submits an "Event Proposal" (Status: DRAFT).
+1. **Proposal:** A Teacher logs in and submits an "Event Proposal" (Status: DRAFT).
 
-2. Submission: The teacher finalizes details (venue preference, budget, resources) and submits for review (Status: PENDING).
+2. **Submission:** The teacher finalizes details (venue preference, budget, resources) and submits for review (Status: PENDING).
 
-3. Validation: The system automatically checks for:
+3. **Validation:** The system automatically checks for:
 
-* Venue availability conflicts.
+      * Venue availability conflicts.
 
-* Resource quantity availability.
+      * Resource quantity availability.
 
-4. Admin Review: An Admin receives a notification. They review the proposal.
+4. **Admin Review:** An Admin receives a notification. They review the proposal.
 
-* If Approved: Status changes to APPROVED. Notification sent to Teacher and Students.
+      * If Approved: Status changes to APPROVED. Notification sent to Teacher and Students.
 
-* If Rejected: Status changes to REJECTED. Reason for rejection sent to Teacher.
+      * If Rejected: Status changes to REJECTED. Reason for rejection sent to Teacher.
 
 ![Workflow_img](https://github.com/AlphaSpider/EMS---Event-Facilitation-module/blob/6a19fa6a814efd7d7cf59bcbcfde6fba61e842fb/docs/Workflow.png)
 
-#### B. Venue & Resource Allocation Workflow
+### B. Venue & Resource Allocation Workflow
 This prevents double-booking and ensures logistics are handled automatically.
 
-1. Check Availability: When an event is drafted, the system queries the Venue and Resource tables for the selected time slot.
+1. **Check Availability:** When an event is drafted, the system queries the Venue and Resource tables for the selected time slot.
 
-2. Provisional Hold: Upon submission (Pending state), resources are "provisionally held" to prevent other drafts from claiming them.
+2. **Provisional Hold:** Upon submission (Pending state), resources are "provisionally held" to prevent other drafts from claiming them.
 
-3. Confirmation: Upon Admin approval, the hold becomes a permanent booking.
+3. **Confirmation:** Upon Admin approval, the hold becomes a permanent booking.
 
-4. Release: If an event is rejected or cancelled, resources are immediately released back to the pool.
+4. **Release:** If an event is rejected or cancelled, resources are immediately released back to the pool.
 
-#### C. Student Registration Workflow
-1. Browse: Student views the "Upcoming Events" dashboard.
+### C. Student Registration Workflow
+1. **Browse:** Student views the "Upcoming Events" dashboard.
 
-2. Register: Student clicks "Register".
+2. **Register:** Student clicks "Register".
 
-3. Capacity Check: System checks Event.registrations.count() < Venue.capacity.
+3. **Capacity Check:** System checks Event.registrations.count() < Venue.capacity.
 
-* Success: Record created in Registration table. Confirmation email sent.
+      * **Success:** Record created in Registration table. Confirmation email sent.
 
-* Failure: Student added to "Waitlist" (optional enhancement).
+      * **Failure:** Student added to "Waitlist" (optional enhancement).
 
-#### D. Feedback Loop
-1. Trigger: 24 hours after Event.end_datetime, a background job triggers.
+### D. Feedback Loop
+1. **Trigger:** 24 hours after Event.end_datetime, a background job triggers.
 
-2. Notification: Attendees (marked as attended=True) receive an email with a feedback link.
+2. **Notification:** Attendees (marked as attended=True) receive an email with a feedback link.
 
-3. Submission: User submits rating (1-5) and comments.
+3. **Submission:** User submits rating (1-5) and comments.
 
-4. Review: Data is aggregated for the "Management Review" dashboard.
+4. **Review:** Data is aggregated for the "Management Review" dashboard.
 
-## 3. User Roles & Permissions (RBAC)
+# 3. User Roles & Permissions (RBAC)
 
 <p>The module implements a strict Role-Based Access Control (RBAC) system to ensure data integrity and security. The system distinguishes between four primary user types, each with specific privileges.</p>
 
 
-### Permissions Matrix
+## Permissions Matrix
 
 | Feature / Action |🛡️ Admin | 👨‍🏫 Teacher | 🎓 Student | 👨‍👩‍👧 Parent |
 |------------------|---------|-------------|-------------|-----------|
@@ -112,9 +112,9 @@ This prevents double-booking and ensures logistics are handled automatically.
 |View Feedback Reports|✅|✅ (Own Events)|❌|❌|
 
 
-### Role Descriptions
+## Role Descriptions
 
-#### 1. Administrator (Superuser):
+### 1. Administrator (Superuser):
 
 <p>   
 
@@ -124,7 +124,7 @@ This prevents double-booking and ensures logistics are handled automatically.
 
 * Responsible for conflict resolution if two teachers request the same resource. </p>
 
-#### 2. Teacher (Staff):
+### 2. Teacher (Staff):
 <p>
   
   * Primary initiator of events.
@@ -134,7 +134,7 @@ This prevents double-booking and ensures logistics are handled automatically.
   * Responsible for marking attendance and uploading event materials.
 </p>
 
-#### 3. Student:
+### 3. Student:
 <p>
   
 * End-user of the events.
@@ -144,7 +144,7 @@ This prevents double-booking and ensures logistics are handled automatically.
 * Provides "Participant Feedback" after the event.
 </p>
 
-#### 4. Parent:
+### 4. Parent:
 
 <p>
   
@@ -153,7 +153,7 @@ This prevents double-booking and ensures logistics are handled automatically.
   * Active participant for specific feedback (e.g., "Event Success Feedback" as requested in requirements).
 </p>
 
-#### 5. Management:
+### 5. Management:
 
 <p>
   
@@ -162,9 +162,9 @@ This prevents double-booking and ensures logistics are handled automatically.
 </p>
 
 
-## 4. Module Architecture
+# 4. Module Architecture
 
-### High-Level System Design
+## High-Level System Design
 
 <p>
     The system follows a layered architecture, separating the Presentation Layer (Frontend), Business Logic Layer (Backend API), and Data Layer (PostgreSQL). Crucially, it employs an Asynchronous Task Queue (Celery + Redis) to decouple time-consuming operations from the main request-response cycle.
@@ -173,51 +173,51 @@ This prevents double-booking and ensures logistics are handled automatically.
 ![architecture_img](https://github.com/AlphaSpider/EMS---Event-Facilitation-module/blob/fe9d0d3c1610884983a729255a3160c18263428a/docs/Module%20Architecture.png)
 
 
-### Component Breakdown
+## Component Breakdown
 
 
-**1. Frontend Layer (SPA)**
+### 1. Frontend Layer (SPA)
   
-* Role: Handles user interaction and presentation logic.
+* **Role:** Handles user interaction and presentation logic.
 
-* Tech: React.js / Vue.js.
+* **Tech:** React.js / Vue.js.
 
-* Interaction: Communicates with the backend exclusively via RESTful APIs (JSON). It contains no business logic, ensuring the backend remains the single source of truth.
+* **Interaction:** Communicates with the backend exclusively via RESTful APIs (JSON). It contains no business logic, ensuring the backend remains the single source of truth.
 
-**2. API Gateway & Load Balancing**
+### 2. API Gateway & Load Balancing
 
-* Role: The entry point for all traffic. It handles SSL termination, basic rate limiting, and request routing.
+* **Role:** The entry point for all traffic. It handles SSL termination, basic rate limiting, and request routing.
 
-* Tech: Nginx (or Cloud-native Load Balancers).
+* **Tech:** Nginx (or Cloud-native Load Balancers).
 
-**3. Backend Application (Synchronous)**
+### 3. Backend Application (Synchronous)
 
-* Core Framework: Django with Django REST Framework (DRF).
+* **Core Framework:** Django with Django REST Framework (DRF).
 
-* Why Django?: Its "batteries-included" nature provides a robust ORM, built-in Authentication/Authorization (RBAC), and admin interface out of the box, significantly speeding up development of the complex "User Role" requirements.
+* **Why Django?:** Its "batteries-included" nature provides a robust ORM, built-in Authentication/Authorization (RBAC), and admin interface out of the box, significantly speeding up development of the complex "User Role" requirements.
 
-* Services Layer: Business logic is encapsulated in services.py (e.g., EventService, VenueService) rather than bloated View functions. This makes the code testable and reusable.
+* **Services Layer:** Business logic is encapsulated in services.py (e.g., EventService, VenueService) rather than bloated View functions. This makes the code testable and reusable.
 
-**4. Asynchronous Task Queue (The "Background" Worker)**
-* Role: Handles heavy lifting that shouldn't make the user wait.
+### 4. Asynchronous Task Queue (The "Background" Worker)
+* **Role:** Handles heavy lifting that shouldn't make the user wait.
 
-* Tech: Celery (Worker) + Redis (Message Broker).
+* **Tech:** Celery (Worker) + Redis (Message Broker).
 
-* Major Use Case: When an Admin clicks "Approve Event", the system must send emails to 500+ students.
+* **Major Use Case:** When an Admin clicks "Approve Event", the system must send emails to 500+ students.
 
-* Without Async: The Admin's browser freezes for 30 seconds while emails send.
+* **Without Async:** The Admin's browser freezes for 30 seconds while emails send.
 
-* With Async: The API returns "Success" instantly. The SendEmailTask is pushed to Redis, and Celery workers process the emails in the background.
+* **With Async:** The API returns "Success" instantly. The SendEmailTask is pushed to Redis, and Celery workers process the emails in the background.
 
-**5. Data Persistence Layer**
-* Database: PostgreSQL.
+### 5. Data Persistence Layer
+* **Database:** PostgreSQL.
 
-* Why PostgreSQL?: The module requires complex relational queries (e.g., checking venue availability time overlaps using overlapping logic). PostgreSQL's robust concurrency control and JSONB support make it superior to MySQL for this use case.
+* **Why PostgreSQL?:** The module requires complex relational queries (e.g., checking venue availability time overlaps using overlapping logic). PostgreSQL's robust concurrency control and JSONB support make it superior to MySQL for this use case.
 
-### Request Lifecycle Example
+## Request Lifecycle Example
 
 
-**1. Synchronous (User Action):**
+### 1. Synchronous (User Action):
 
 * A Teacher submits a POST request to /api/events/.
 
@@ -230,13 +230,14 @@ This prevents double-booking and ensures logistics are handled automatically.
 * The server responds 201 Created to the frontend.
 
 
-**2. Asynchronous (System Action):**
+### 2. Asynchronous (System Action):
 
 * Later, an Admin approves the event.
 
 * The EventService updates the status to APPROVED in the DB.
 
 * It immediately pushes a notify_participants_task to Redis.
+
 
 
 * A Celery Worker picks up the task, generates the email content, and sends it via an external provider (e.g., SendGrid).
