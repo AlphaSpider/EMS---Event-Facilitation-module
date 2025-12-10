@@ -6,10 +6,10 @@ The data module is designed for PostgreSQL, utilizing a normalized relational sc
 ### Implementation Files
 
 
-* Python Logic (Django ORM): events/models.py - Defines the application-level data structures.
+* Python Logic (Django ORM): [events/models.py](https://github.com/AlphaSpider/EMS---Event-Facilitation-module/blob/fe9d0d3c1610884983a729255a3160c18263428a/events/models.py) - Defines the application-level data structures.
 
 
-* Database Schema (SQL): events/SQLdb_design.sql - Contains DDL and optimized raw queries.
+* Database Schema (SQL): [events/SQLdb_design.sql](https://github.com/AlphaSpider/EMS---Event-Facilitation-module/blob/fe9d0d3c1610884983a729255a3160c18263428a/events/SQLdb_design.sql) - Contains DDL and raw queries.
 
 #### Entity Relationship Diagram (ERD)
 
@@ -17,7 +17,7 @@ The following diagram illustrates the relationships between Users, Events, Venue
 
 ![ERD_img](https://github.com/AlphaSpider/EMS---Event-Facilitation-module/blob/6a19fa6a814efd7d7cf59bcbcfde6fba61e842fb/docs/Datamodel_diagram.png)
 
-### Key Design Decisions
+### Major Design Decisions
 
 1. RBAC Integration: The User model includes a specific role field (Admin, Teacher, Student) to enforce the detailed permissions matrix required by the system.
 
@@ -170,7 +170,7 @@ This prevents double-booking and ensures logistics are handled automatically.
     The system follows a layered architecture, separating the Presentation Layer (Frontend), Business Logic Layer (Backend API), and Data Layer (PostgreSQL). Crucially, it employs an Asynchronous Task Queue (Celery + Redis) to decouple time-consuming operations from the main request-response cycle.
 </p>
 
-![architecture_img]()
+![architecture_img](https://github.com/AlphaSpider/EMS---Event-Facilitation-module/blob/fe9d0d3c1610884983a729255a3160c18263428a/docs/Module%20Architecture.png)
 
 
 ### Component Breakdown
@@ -203,7 +203,7 @@ This prevents double-booking and ensures logistics are handled automatically.
 
 * Tech: Celery (Worker) + Redis (Message Broker).
 
-* Key Use Case: When an Admin clicks "Approve Event", the system must send emails to 500+ students.
+* Major Use Case: When an Admin clicks "Approve Event", the system must send emails to 500+ students.
 
 * Without Async: The Admin's browser freezes for 30 seconds while emails send.
 
@@ -237,5 +237,6 @@ This prevents double-booking and ensures logistics are handled automatically.
 * The EventService updates the status to APPROVED in the DB.
 
 * It immediately pushes a notify_participants_task to Redis.
+
 
 * A Celery Worker picks up the task, generates the email content, and sends it via an external provider (e.g., SendGrid).
