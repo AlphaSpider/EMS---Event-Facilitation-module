@@ -15,7 +15,7 @@ The data module is designed for PostgreSQL, utilizing a normalized relational sc
 
 The following diagram illustrates the relationships between Users, Events, Venues, and the Feedback system.
 
-![ERD_img]('docs/Datamodel_diagram.png')
+![ERD_img](https://github.com/AlphaSpider/EMS---Event-Facilitation-module/blob/6a19fa6a814efd7d7cf59bcbcfde6fba61e842fb/docs/Datamodel_diagram.png)
 
 ### Key Design Decisions
 
@@ -52,7 +52,7 @@ This workflow ensures that all events are vetted by the administration before re
 
 * If Rejected: Status changes to REJECTED. Reason for rejection sent to Teacher.
 
-![Workflow_img]('docs/Workflow.png')
+![Workflow_img](https://github.com/AlphaSpider/EMS---Event-Facilitation-module/blob/6a19fa6a814efd7d7cf59bcbcfde6fba61e842fb/docs/Workflow.png)
 
 #### B. Venue & Resource Allocation Workflow
 This prevents double-booking and ensures logistics are handled automatically.
@@ -170,6 +170,7 @@ This prevents double-booking and ensures logistics are handled automatically.
     The system follows a layered architecture, separating the Presentation Layer (Frontend), Business Logic Layer (Backend API), and Data Layer (PostgreSQL). Crucially, it employs an Asynchronous Task Queue (Celery + Redis) to decouple time-consuming operations from the main request-response cycle.
 </p>
 
+![architecture_img]()
 
 
 ### Component Breakdown
